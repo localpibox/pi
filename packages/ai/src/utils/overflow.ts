@@ -31,6 +31,9 @@ import type { AssistantMessage } from "../types.ts";
  * - Xiaomi MiMo: Truncates input to fill contextWindow exactly, then returns finish_reason "length"
  *   with output=0 (no room left to generate). Detected via stopReason "length" + zero output +
  *   input filling the context window.
+ * - Qwen/Llama.cpp (llama.cpp backend): Auto-generates reasoning/thinking blocks that consume
+ *   the output token budget, producing stopReason "length" with non-zero output but near-full
+ *   input context. Detected via stopReason "length" + output > 0 + input >= 90% of context.
  * - DashScope/Qwen: "Range of input length should be [1, X]" (HTTP 400 invalid_parameter_error)
  * - Ollama: Some deployments truncate silently, others return errors like "prompt too long; exceeded max context length by X tokens"
  */
@@ -110,6 +113,10 @@ const NON_OVERFLOW_PATTERNS = [
  *   sometimes returns rate limit errors. Pass contextWindow param to detect silent overflow.
  * - Xiaomi MiMo: Truncates input to fit contextWindow then returns stopReason "length" with
  *   output=0. Pass contextWindow param to detect via the "filled context + zero output" signal.
+ * - Qwen/Llama.cpp (llama.cpp backend): Auto-generates reasoning/thinking blocks that consume
+ *   the output token budget, producing stopReason "length" with non-zero output. Detected via
+ *   stopReason "length" + output > 0 + input >= 90% of context. Pass contextWindow param to
+ *   detect this style of overflow.
  * - Ollama: May truncate input silently for some setups, but may also return explicit
  *   overflow errors that match the patterns above. Silent truncation still cannot be
  *   detected here because we do not know the expected token count.
@@ -153,6 +160,22 @@ export function isContextOverflow(message: AssistantMessage, contextWindow?: num
 	if (contextWindow && message.stopReason === "length" && message.usage.output === 0) {
 		const inputTokens = message.usage.input + message.usage.cacheRead;
 		if (inputTokens >= contextWindow * 0.99) {
+			return true;
+		}
+	}
+
+	// Case 4: Qwen/Llama.cpp reasoning overflow — models auto-generate thinking/reasoning
+	// blocks that silently consume the output token budget. This produces stopReason "length"
+	// with non-zero output (all thinking tokens, no text/tool calls) when input is near the
+	// context window. Without this check, Pi treats it as threshold-based compaction (willRetry=
+	// false), which leaves the session in a dead state after compaction.
+	//
+	// Verified across Qwen3.6, Qwen3.5, and Qwen2.5 models on both DashScope and llama.cpp
+	// backends (Lemonade, Ollama, vLLM, etc.). Also reproduced with GPT-5.6-sol on Pi 0.80.6
+	// with --no-extensions.
+	if (contextWindow && message.stopReason === "length" && message.usage.output > 0) {
+		const inputTokens = message.usage.input + message.usage.cacheRead;
+		if (inputTokens >= contextWindow * 0.90) {
 			return true;
 		}
 	}
