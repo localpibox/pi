@@ -1,102 +1,97 @@
-# Contributing to pi
+# Contributing to LocalPibox Pi Fork
 
-This guide exists to save both sides time.
+This fork adds Qwen reasoning support to Pi. This document explains how to
+contribute — whether by improving the LocalPibox patches, forking for your own
+stack, or feeding changes back upstream.
 
-## Philosophy
+## The Patch Model
 
-First things first: **pi's core is minimal**.
+All LocalPibox changes are kept as a **single squashed commit** on top of
+upstream. This keeps the delta clean and makes rebasing straightforward.
 
-If your feature does not belong in the core, it should be an extension. PRs that bloat the core will likely be rejected.
-
-Pi's core exists to be minimal and to be extensible so that it can be influenced and manipulated by extensions.  Even hook points for extensions however should be well considered and discussed to avoid adding unmaintainable bloat and complex interactions.
-
-## The One Rule
-
-**You must understand your code.** If you cannot explain what your changes do and how they interact with the rest of the system, your PR will be closed.
-
-Using AI to write code is fine. Submitting AI-generated slop without understanding it is not.
-
-If you use an agent, run it from the `pi` root directory so it picks up `AGENTS.md` automatically. Your agent must follow the rules and guidelines in that file.
-
-## Contribution Gate
-
-All issues and PRs from new contributors are auto-closed by default.
-
-Issues submitted Friday through Sunday are not guaranteed to be reviewed.  If something is urgent, ask on Discord: https://discord.com/invite/3cU7Bz4UPx
-
-Maintainers review auto-closed issues daily and reopen worthwhile ones. Issues that do not meet the quality bar below will not be reopened or receive a reply.
-
-Approval happens through maintainer replies on issues:
-
-- `lgtmi`: your future issues will not be auto-closed
-- `lgtm`: your future issues and PRs will not be auto-closed
-
-The command must be at the start of the reply (optionally after one or more `@username` mentions) or at the end. `lgtmi` does not grant rights to submit PRs. Only `lgtm` grants rights to submit PRs.
-
-## Quality Bar For Issues
-
-If you open an issue, you must use one of the two GitHub issue templates.
-
-If you open an issue, keep it short, concrete, and worth reading.
-
-- Keep it concise. If it does not fit on one screen, it is too long.
-- Write in your own voice (do not use an LLM to generate text, if you must, follow up with a clearly AI labeled comment).
-- State the bug or request clearly.
-- Explain why it matters.
-- If you want to implement the change yourself, say so.
-
-If the issue is real and written well, a maintainer may reopen it or reply with `lgtmi` or `lgtm` in the command position described above.
-
-## Blocking
-
-If you ignore this document twice, or if you spam the tracker with agent-generated issues, your GitHub account will be permanently blocked.
-
-If you send a large volume of issues through automation, your GitHub account will be permanently blocked. No taksies backsies.
-
-## Before Submitting a PR
-
-Do not open a PR unless you have already been approved by a maintainer using `lgtm` in the command position described above.
-
-Before submitting a PR:
-
-```bash
-npm run check
-./test.sh
+```
+upstream release ──→ [v0.83.0] ──┐
+                                  │
+lpb branch       ──→ [lpb patch]──┘
 ```
 
-Both must pass.
+### Working on a patch
 
-Do not edit `CHANGELOG.md`. Changelog entries are added by maintainers.
+1. Fork or clone `localpibox/pi`
+2. Check out the `lpb` branch
+3. Make your changes in a feature branch
+4. Squash into one commit: `git commit -S -s --squash`
+5. Push and open a PR against the `lpb` branch
 
-If you are adding a new provider to `packages/ai`, see `AGENTS.md` for required tests.
+### Rebasing onto a new upstream release
 
-## Questions?
+```bash
+# Fetch latest upstream
+git fetch https://github.com/earendil-works/pi.git release:upstream-release
 
-Ask on [Discord](https://discord.com/invite/nKXTsAcmbT).
+# Rebase the lpb patch
+git checkout lpb
+git rebase upstream-release
 
-## FAQ
+# Resolve conflicts if any, then force-push
+git push --force-with-lease origin lpb
+```
 
-### Why are new issues and PRs auto-closed?
+### Patch boundaries
 
-pi receives more issues than the maintainers can responsibly review in real time. Many reports do not meet the quality bar in this guide or do not follow CONTRIBUTING.md. Some are slung at the repository mindlessly via an agent instead of being reviewed and shaped by the person submitting them. Auto-closing creates a buffer so maintainers can review the tracker on their own schedule and reopen the issues that meet the quality bar.
+- **In scope:** Changes that make reasoning/thinking work correctly with Qwen
+  models (and potentially other local models)
+- **Out of scope:** Pi core features, UI changes, or unrelated fixes — those
+  go to upstream directly
 
-### Why are weekend issues lower priority?
+## Forking for Your Own Stack
 
-We triage the tracker during working hours. That means more issues can accumulate over the weekend. Anything submitted Friday through Sunday may be missed or given lower priority in the Monday review queue. If a problem is urgent, ask on Discord and include the short version, a repro, and the relevant logs.
+If you want to personalize this fork for your own setup:
 
-### Why do some issues get no reply?
+1. **Fork** `localpibox/pi` to your own GitHub account
+2. **Customize** the patches — adjust reasoning parameters, compaction settings,
+   or add support for other models
+3. **Repoint** your stack's `lpb.stack.env` at your fork:
+   ```bash
+   export LPB_PI_FORK=https://github.com/<you>/pi.git
+   export LPB_PI_REF=main
+   ```
+4. **Rebuild** your devstack image (or update extensions at runtime)
 
-A reply is maintenance work too. Low-signal issues, unclear reports, duplicates, and issues that do not follow this guide may be closed without discussion. This keeps time available for reproducible bugs, thoughtful requests, and contributors who have done the work to make their report actionable.
+See the
+[Forking & Repointing guide](https://github.com/localpibox/devstack#forking--repointing)
+for the full procedure.
 
-### Why not let AI triage everything?
+## Feeding Back Upstream
 
-AI can help group duplicates, summarize reports, and spot missing information. It is not trusted to make final maintainer decisions. Polished AI-generated issues can still be wrong, misleading, or expensive to investigate. Human review remains the final gate.
+If your patch proves useful beyond the LocalPibox stack:
 
-### Is this hostile to contributors?
+1. **Open an issue** on `earendil-works/pi` describing the problem and your
+   approach
+2. **Split your patch** — ensure it's clean, focused, and not tied to
+   LocalPibox-specific configuration
+3. **Submit a PR** against the upstream `release` branch
+4. **Follow up** — if upstream merges, fold it into the LocalPibox patch set
 
-No. It is a guardrail against burnout and tracker spam. Short, concrete, reproducible issues are welcome. Thoughtful contributions are welcome. Automated slop, entitlement, and large volumes of low-effort reports are not.
+### What goes upstream
 
-## Where can I learn about plans?
+- ✅ Generally useful features (Qwen reasoning support, overflow detection)
+- ✅ Bug fixes that apply regardless of model choice
+- ✅ Core improvements that benefit all Pi users
 
-Earendil uses RFCs to discuss larger changes.  Not all of them are public, but
-quite a few are.  They can be found at [rfc.earendil.com](https://rfc.earendil.com/keyword/pi/).
+### What stays local
+
+- ❌ LocalPibox-specific configuration (model URLs, hardware-specific tuning)
+- ❌ Workarounds that conflict with upstream design direction
+- ❌ Opinionated defaults specific to this stack
+
+## Reporting Issues
+
+- **Pi core issues** → [earendil-works/pi/issues](https://github.com/earendil-works/pi/issues)
+- **LocalPibox-specific patches** → [localpibox/pi/issues](https://github.com/localpibox/pi/issues)
+- **Stack configuration** → [localpibox/devstack/issues](https://github.com/localpibox/devstack/issues)
+
+## Communication
+
+- [Pi Discord](https://discord.com/invite/3cU7Bz4UPx) — upstream community
+- Issues and PRs on GitHub — preferred for technical discussions
