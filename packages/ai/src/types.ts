@@ -595,6 +595,8 @@ export interface OpenAICompletionsCompat {
 	sessionAffinityFormat?: SessionAffinityFormat;
 	/** Whether the provider supports long prompt cache retention (`prompt_cache_retention: "24h"` or Anthropic-style `cache_control.ttl: "1h"`, depending on format). Default: true. */
 	supportsLongCacheRetention?: boolean;
+	/** Maximum tokens for Qwen thinking/reasoning phase. Set to 0 for soft-capped (bounded) thinking, positive integer for token count budget, -1 for unbounded. Prevents runaway thinking blocks that exhaust max_tokens. Only applies to Qwen models with qwen-chat-template thinking format. */
+	reasoningBudgetTokens?: number;
 }
 
 /** Compatibility settings for OpenAI Responses APIs. */

@@ -159,6 +159,17 @@ export function isContextOverflow(message: AssistantMessage, contextWindow?: num
 		}
 	}
 
+	// Case 4: Qwen/Llama.cpp reasoning overflow "models auto-generate thinking/reasoning
+	// blocks that silently consume the output token budget. This produces stopReason "length"
+	// with non-zero output (all thinking tokens, no text/tool calls) when input is near the
+	// context window.
+	if (contextWindow && message.stopReason === "length" && message.usage.output > 0) {
+		const inputTokens = message.usage.input + message.usage.cacheRead;
+		if (inputTokens >= contextWindow * 0.90) {
+			return true;
+		}
+	}
+
 	return false;
 }
 
