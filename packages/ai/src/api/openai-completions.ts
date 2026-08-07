@@ -157,11 +157,12 @@ interface OpenAICompatCacheControl {
 
 type ResolvedOpenAICompletionsCompat = Omit<
 	Required<OpenAICompletionsCompat>,
-	"cacheControlFormat" | "deferredToolsMode" | "supportsThinkingTokenBudget"
+	"cacheControlFormat" | "deferredToolsMode" | "supportsThinkingTokenBudget" | "reasoningBudgetTokens"
 > & {
 	cacheControlFormat?: OpenAICompletionsCompat["cacheControlFormat"];
 	deferredToolsMode?: OpenAICompletionsCompat["deferredToolsMode"];
 	supportsThinkingTokenBudget?: OpenAICompletionsCompat["supportsThinkingTokenBudget"];
+	reasoningBudgetTokens?: OpenAICompletionsCompat["reasoningBudgetTokens"];
 };
 
 type ResolvedChatTemplateKwargValue = string | number | boolean | null;
@@ -767,10 +768,20 @@ function buildParams(
 			}
 		}
 	} else if (compat.thinkingFormat === "qwen-chat-template" && model.reasoning) {
-		(params as any).chat_template_kwargs = {
+		const kwargs: Record<string, unknown> = {
 			enable_thinking: !!options?.reasoningEffort,
 			preserve_thinking: true,
 		};
+		if (options?.reasoningEffort) {
+			kwargs.reasoning_effort = model.thinkingLevelMap?.[options.reasoningEffort] ?? options.reasoningEffort;
+		}
+		(params as any).chat_template_kwargs = kwargs;
+
+		// Qwen-MTP reasoning budget: soft-caps thinking length at the llama.cpp sampler
+		// level. reasoning_budget_tokens=0 gives a bounded (but non-zero) thinking phase.
+		if (compat.reasoningBudgetTokens !== undefined) {
+			(params as any).reasoning_budget_tokens = compat.reasoningBudgetTokens;
+		}
 	} else if (compat.thinkingFormat === "chat-template" && model.reasoning) {
 		const chatTemplateKwargs = buildChatTemplateValues(model, options, compat.chatTemplateKwargs);
 		if (chatTemplateKwargs) {
@@ -1519,6 +1530,7 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 		chatTemplateArgs: {},
 		zaiToolStream: false,
 		supportsThinkingTokenBudget: false,
+		reasoningBudgetTokens: undefined,
 		supportsStrictMode: !isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia,
 		supportsOpenAIGrammarTools: false,
 		cacheControlFormat,
@@ -1564,6 +1576,7 @@ function getCompat(model: Model<"openai-completions">): ResolvedOpenAICompletion
 		chatTemplateArgs: model.compat.chatTemplateArgs ?? detected.chatTemplateArgs,
 		zaiToolStream: model.compat.zaiToolStream ?? detected.zaiToolStream,
 		supportsThinkingTokenBudget: model.compat.supportsThinkingTokenBudget ?? detected.supportsThinkingTokenBudget,
+		reasoningBudgetTokens: model.compat.reasoningBudgetTokens ?? detected.reasoningBudgetTokens,
 		supportsStrictMode: model.compat.supportsStrictMode ?? detected.supportsStrictMode,
 		supportsOpenAIGrammarTools: model.compat.supportsOpenAIGrammarTools ?? detected.supportsOpenAIGrammarTools,
 		cacheControlFormat: model.compat.cacheControlFormat ?? detected.cacheControlFormat,
