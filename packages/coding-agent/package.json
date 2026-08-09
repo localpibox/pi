@@ -104,5 +104,12 @@
 	},
 	"engines": {
 		"node": ">=22.19.0"
+	},
+	"allowScripts": {
+		"better-sqlite3": true,
+		"agent-browser": true,
+		"esbuild": true,
+		"protobufjs": true,
+		"@google/genai": true
 	}
 }
