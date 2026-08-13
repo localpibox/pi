@@ -35,7 +35,6 @@ These are the **only** changes this fork adds on top of v0.84.1:
 | `ai/src/utils/overflow.ts` | **Case 4** overflow detection | Qwen/Llama.cpp reasoning blocks silently consume the output budget → `stopReason "length"` + output > 0 + input ≥ 90% of window. Without it, Pi treats overflow as a dead session after compaction. |
 | `ai/src/types.ts` | `reasoningBudgetTokens` compat field | Lets a provider (e.g. the lemonade plugin) set a Qwen thinking budget (0 = soft-capped, positive = token limit, -1 = unbounded). |
 | `ai/src/api/openai-completions.ts` | `qwen-chat-template` sends `reasoning_effort` mapping + `reasoning_budget_tokens` soft-cap | Reads `compat.reasoningBudgetTokens` and emits the `reasoning_budget_tokens` llama.cpp sampler param to prevent runaway thinking. |
-| `coding-agent/src/config.ts` | `LOCALPIB_VERSION` from `LPB_VERSION` env | Version tracking for the LocalPibox stack. |
 
 **Intentionally NOT included:** The `SessionTreeEntry`/`fromHook` refactor, compaction comment-only changes, and the `baseten` / `qwen-token-plan-individual` provider removals. None are required for Lemonade/Qwen support, and they are incompatible with the v0.84.1 codebase (they were written against an older v0.83 base).
 
