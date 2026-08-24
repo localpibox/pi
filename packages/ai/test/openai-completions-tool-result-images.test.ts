@@ -19,8 +19,13 @@ const emptyUsage: Usage = {
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
 };
 
-const compat: Omit<Required<OpenAICompletionsCompat>, "deferredToolsMode"> & {
+const compat: Omit<
+	Required<OpenAICompletionsCompat>,
+	"deferredToolsMode" | "reasoningBudgetTokens" | "thinkingTokenBudgetField"
+> & {
 	deferredToolsMode?: OpenAICompletionsCompat["deferredToolsMode"];
+	reasoningBudgetTokens?: OpenAICompletionsCompat["reasoningBudgetTokens"];
+	thinkingTokenBudgetField?: OpenAICompletionsCompat["thinkingTokenBudgetField"];
 } = {
 	supportsStore: true,
 	supportsDeveloperRole: true,
@@ -39,6 +44,8 @@ const compat: Omit<Required<OpenAICompletionsCompat>, "deferredToolsMode"> & {
 	chatTemplateArgs: {},
 	zaiToolStream: false,
 	supportsThinkingTokenBudget: false,
+	reasoningBudgetTokens: undefined,
+	thinkingTokenBudgetField: undefined,
 	supportsStrictMode: true,
 	supportsOpenAIGrammarTools: false,
 	cacheControlFormat: "anthropic",

@@ -295,15 +295,31 @@ describe("openai-completions tool_choice", () => {
 		expect(getModel("zai", "glm-5.2")?.compat?.zaiToolStream).toBe(true);
 	});
 
-	it("stores z.ai GLM-5.2 effort metadata", () => {
+	it("stores z.ai effort metadata", () => {
 		for (const provider of ["zai", "zai-coding-cn"] as const) {
-			const model = getModel(provider, "glm-5.2")!;
-			expect(model.compat?.supportsReasoningEffort).toBe(true);
-			expect(model.thinkingLevelMap).toEqual({
+			for (const modelId of ["glm-5.2", "glm-5.2-highspeed"] as const) {
+				const model = getModel(provider, modelId)!;
+				expect(model.compat?.supportsReasoningEffort).toBe(true);
+				expect(model.thinkingLevelMap).toEqual({
+					off: "none",
+					minimal: null,
+					low: null,
+					medium: null,
+					high: "high",
+					xhigh: null,
+					max: "max",
+				});
+			}
+
+			const glm53 = getModel(provider, "glm-5.3")!;
+			expect(glm53.compat?.supportsReasoningEffort).toBe(true);
+			expect(glm53.thinkingLevelMap).toEqual({
+				off: null,
 				minimal: null,
-				low: "high",
-				medium: "high",
+				low: "low",
+				medium: null,
 				high: "high",
+				xhigh: null,
 				max: "max",
 			});
 		}
@@ -1720,9 +1736,12 @@ describe("openai-completions tool_choice", () => {
 		]) {
 			const params = await captureSimpleParams(model, testCase.reasoning);
 
+			// lpb: reasoning_effort is forwarded inside chat_template_kwargs
+			// (Qwen-MTP thinking depth control), never top-level.
 			expect(params.chat_template_kwargs).toEqual({
 				enable_thinking: testCase.expected,
 				preserve_thinking: true,
+				...(testCase.reasoning ? { reasoning_effort: testCase.reasoning } : {}),
 			});
 			expect(params.reasoning_effort).toBeUndefined();
 		}

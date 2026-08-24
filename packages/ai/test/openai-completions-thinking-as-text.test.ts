@@ -39,15 +39,22 @@ const compat = {
 	chatTemplateArgs: {},
 	zaiToolStream: false,
 	supportsThinkingTokenBudget: false,
+	reasoningBudgetTokens: undefined,
+	thinkingTokenBudgetField: undefined,
 	supportsStrictMode: true,
 	supportsOpenAIGrammarTools: false,
 	cacheControlFormat: undefined,
 	sendSessionAffinityHeaders: false,
 	sessionAffinityFormat: "openai",
 	supportsLongCacheRetention: true,
-} satisfies Omit<Required<OpenAICompletionsCompat>, "cacheControlFormat" | "deferredToolsMode"> & {
+} satisfies Omit<
+	Required<OpenAICompletionsCompat>,
+	"cacheControlFormat" | "deferredToolsMode" | "reasoningBudgetTokens" | "thinkingTokenBudgetField"
+> & {
 	cacheControlFormat?: OpenAICompletionsCompat["cacheControlFormat"];
 	deferredToolsMode?: OpenAICompletionsCompat["deferredToolsMode"];
+	reasoningBudgetTokens?: OpenAICompletionsCompat["reasoningBudgetTokens"];
+	thinkingTokenBudgetField?: OpenAICompletionsCompat["thinkingTokenBudgetField"];
 };
 
 function buildModel(baseUrl = "http://127.0.0.1:1"): Model<"openai-completions"> {
