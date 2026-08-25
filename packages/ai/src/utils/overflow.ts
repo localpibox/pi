@@ -165,7 +165,7 @@ export function isContextOverflow(message: AssistantMessage, contextWindow?: num
 	// context window.
 	if (contextWindow && message.stopReason === "length" && message.usage.output > 0) {
 		const inputTokens = message.usage.input + message.usage.cacheRead;
-		if (inputTokens >= contextWindow * 0.90) {
+		if (inputTokens >= contextWindow * 0.9) {
 			return true;
 		}
 	}
